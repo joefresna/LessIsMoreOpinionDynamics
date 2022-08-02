@@ -1,1 +1,1 @@
-# LessIsMoreOpinionDynamics
+# Less Is More in Opinion Dynamics

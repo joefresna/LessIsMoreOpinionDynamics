@@ -1,0 +1,217 @@
+'''
+Created on 2 August 2022
+
+@author: Andreagiovanni Reina.
+IRIDIA, Universite' Libre de Bruxelles, Belgium
+'''
+
+import sys
+import os
+import configparser
+from enum import Enum
+import math
+import json
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+from future.backports.test.pystone import FALSE
+
+
+DEBUG = True
+DEFAULT_CONFIG_FILENAME="/Users/joefresna/LessIsMoreOpinionDynamics/config/bestOf2.config"
+
+class NetworkType(Enum):
+    FULLY_CONNECTED = 0
+    ERSOS_RENYI = 1
+    BARABASI_ALBERT = 2
+    RGG = 3
+    RGG_FIXED_DEGREE = 4
+    
+class SpaceNet:
+    def __init__(self):
+        self.pos_dict = None
+        self.orientations = None
+    
+def initNetwork(netType, numNodes, randomSeed, netParam):
+    if (netType == NetworkType.FULLY_CONNECTED):
+        return nx.complete_graph(numNodes) #np.repeat(0, self.numNodes)
+    elif (netType == NetworkType.ERSOS_RENYI):
+        graph = nx.erdos_renyi_graph(numNodes, netParam, randomSeed)
+        i = 0
+        while ( not nx.is_connected( graph ) ):
+            if (DEBUG): print("Graph was not connected; Resampling!")
+            i = i+1
+            graph = nx.erdos_renyi_graph(numNodes, netParam, randomSeed*i*2211)
+        return graph
+    elif (netType == NetworkType.BARABASI_ALBERT):
+        return nx.barabasi_albert_graph(numNodes, netParam, randomSeed)
+    elif (netType == NetworkType.RGG or netType == NetworkType.RGG_FIXED_DEGREE):
+        connected = False
+        while (not connected):
+            spaceGraph = SpaceNet()
+            spaceGraph.pos_dict = {}
+            graph = nx.Graph()
+            #g=nx.random_geometric_graph(self.numNodes, self.commRadius, pos={i: np.random.uniform(size=2) for i in range(self.numNodes) })
+            for i in np.arange(0,numNodes):
+                spaceGraph.pos_dict[i] = np.array( [np.random.uniform(0, 1), np.random.uniform(0, 1)] )  
+                graph.add_node(i)
+                i += 1
+            
+            for agent in np.arange(0,numNodes):
+                for neigh, neighPos in spaceGraph.pos_dict.items():
+                    if (not neigh == agent) and (np.linalg.norm(spaceGraph.pos_dict[agent]-neighPos) <= netParam):
+                        graph.add_edge(agent, neigh)
+                
+                connected = nx.is_connected( graph )
+                if not connected:
+                    if (DEBUG): print("Graph was not connected; Resampling!")
+        nx.set_node_attributes(graph, spaceGraph.pos_dict, "pos")
+        return graph
+            
+if __name__ == '__main__':
+    if DEBUG: 
+        print("Process Started")
+    if len(sys.argv)>1 :
+        configFile = sys.argv[1]
+    else:
+        configFile = DEFAULT_CONFIG_FILENAME
+    
+    if not (os.path.isfile(configFile)):
+        print("Impossible to open config file: ", configFile)
+        sys.exit()
+    
+    if DEBUG:
+        print("Reading properties file: " + configFile)
+    # opening the config file
+    config = configparser.ConfigParser()
+    config.read(configFile)
+   
+    ### Load parameters from config file
+    ## -- Experiment params
+    randomSeed = config.getint('experiment', 'randomSeed')
+    numberOfExperiments = config.getint('experiment', 'numberOfExperiments')
+    outputTxtFile = config.get('experiment', 'outputTxtFile')
+    cluster = config.getboolean('experiment', 'cluster')
+    maxTime = config.getint('experiment', 'maxTime')
+    optionQualities = json.loads( config['experiment']['optionQualities'] )
+    discoveryProbability = config.getfloat('experiment', 'discoveryProbability')
+    digestionTime = config.getint('experiment', 'digestionTime')
+     
+    ## -- Network params
+    numOfNodes = config.getint('network', 'numberOfNodes')
+    netTypeStr = config.get('network', 'netType')
+    if (netTypeStr == 'full'):
+        netType =NetworkType.FULLY_CONNECTED
+    elif (netTypeStr == 'erdos-renyi'):
+        netType = NetworkType.ERSOS_RENYI
+    elif (netTypeStr == 'barabasi-albert'):
+        netType = NetworkType.BARABASI_ALBERT
+    elif (netTypeStr == 'rgg'):
+        netType = NetworkType.RGG
+    elif (netTypeStr == 'rgg-fixed-degree'):
+        netType = NetworkType.RGG_FIXED_DEGREE
+    else:
+        print("Non valid input for parameter [Network].netType. Error on value '" + netTypeStr + "'. Valid values are: 'full', 'erdos-renyi', 'barabasi-albert', 'rgg', 'rgg-fixed-degree'")
+        sys.exit()
+    if (not netType == NetworkType.FULLY_CONNECTED):           
+        if (netType == NetworkType.BARABASI_ALBERT):
+            netParam  = config.getint('network', 'networkParameter')
+            if (netParam >= numOfNodes):
+                print("ERROR! With barabasi-albert networks the number of edges must be smaller than number of edges. Invalid network parameter = " + str(netParam) + ".")
+                sys.exit()
+        else:
+            netParam = config.getfloat('network', 'networkParameter')
+            if (netType == NetworkType.RGG_FIXED_DEGREE): # convert the fixed degree in the RGG's communication radius
+                netParam = math.sqrt( netParam / (math.pi * numOfNodes) )
+    else:
+        netParam=0
+    
+    ## Pring out config
+    if DEBUG:
+        print( "randomSeed: " + str(randomSeed) )
+        print( "numberOfExperiments: " + str(numberOfExperiments) )
+        print( "outputTxtFile: " + str(outputTxtFile) )
+        print( "cluster: " + str(cluster) )
+        print( "maxTime: " + str(maxTime) )
+        print( "optionQualities: " + str(optionQualities) )
+        print( "discoveryProbability : " + str(discoveryProbability) )
+        print( "digestionTime : " + str(digestionTime) )
+        print( "numOfNodes: " + str(numOfNodes) )
+        print( "netType: " + str(netTypeStr) )
+        print( "networkParameter: " + str(netParam) )
+    
+    np.random.seed(randomSeed)
+    for rep in range(numberOfExperiments):
+        ## Creating the network
+        graph = initNetwork(netType, numOfNodes, randomSeed+(rep*555), netParam)
+        ## Initialising the opinions with all nodes starting from opinion 2
+        opinions = { n:2 for n in range(numOfNodes) }
+        digestion = { n:0 for n in range(numOfNodes) }
+        #print(opinions)
+        nx.set_node_attributes(graph, opinions, "opinion")
+        nx.set_node_attributes(graph, digestion, "digestion")
+
+        for t in np.arange(1,maxTime+1):
+            # Select a random node
+            node = np.random.randint(numOfNodes)
+            
+            # Update the digestion timers
+            digestion = nx.get_node_attributes(graph, 'digestion')
+            digestion = { n: max(0,d-1) for n,d in digestion.items() }
+            nx.set_node_attributes(graph, digestion, "digestion")
+            
+            change = False
+            # Decide whether have independent discovery or social interaction
+            if np.random.uniform() < discoveryProbability: # independent discovery 
+                if (graph.nodes[node]['opinion']==2): change = True
+                graph.nodes[node]['opinion']=1
+                #print("Disco")
+            else: # social interaction
+                neighs = [n for n in graph.neighbors(node) if (np.random.uniform() < optionQualities[ graph.nodes[n]['opinion']-1 ]) and (graph.nodes[n]['digestion']==0) ]
+                #print(neighs)
+                if len(neighs) > 0:
+                    neigh = np.random.choice(neighs)
+                    if not (graph.nodes[node]['opinion'] == graph.nodes[neigh]['opinion']):
+                        graph.nodes[node]['opinion'] = graph.nodes[neigh]['opinion']
+                        graph.nodes[node]['digestion'] = digestionTime
+                        change = True
+            
+            # if (change): print(len([o for o in nx.get_node_attributes(graph, 'opinion').values() if o == 1]))
+
+            if (False and change):                        
+                opinion = nx.get_node_attributes(graph, 'opinion')
+                print(opinion)
+                digestion = nx.get_node_attributes(graph, 'digestion')
+                print(digestion)
+                ## Plotting the graph with colored nodes
+                decisionColors=[]
+                for n in graph.nodes():
+                    if (graph.nodes[n]['opinion']==1): decisionColors.append('r') 
+                    elif  (graph.nodes[n]['opinion']==2): decisionColors.append('g')
+                    else: decisionColors.append('y')
+                if (netType == NetworkType.RGG or netType == NetworkType.RGG_FIXED_DEGREE):
+                    pos_layout = nx.get_node_attributes(graph, "pos")
+                else:
+                    pos_layout = nx.circular_layout(graph)
+                nx.draw(graph, pos_layout, node_color=decisionColors, with_labels=True)
+                plt.show()
+
+            if not 2 in nx.get_node_attributes(graph, 'opinion').values():
+                print("Consensus for option 1 reached at timestep " + str(t) )
+                break
+            
+        
+        ## Plotting the graph with colored nodes
+        decisionColors=[]
+        for n in graph.nodes():
+            if (graph.nodes[n]['opinion']==1): decisionColors.append('r') 
+            elif  (graph.nodes[n]['opinion']==2): decisionColors.append('g')
+            else: decisionColors.append('y')
+        if (netType == NetworkType.RGG or netType == NetworkType.RGG_FIXED_DEGREE):
+            pos_layout = nx.get_node_attributes(graph, "pos")
+        else:
+            pos_layout = nx.circular_layout(graph)
+        nx.draw(graph, pos_layout, node_color=decisionColors, with_labels=True)
+        plt.show()   
+    
+
