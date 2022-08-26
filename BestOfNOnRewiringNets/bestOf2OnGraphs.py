@@ -14,7 +14,6 @@ import json
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from future.backports.test.pystone import FALSE
 
 
 DEBUG = True
@@ -26,12 +25,7 @@ class NetworkType(Enum):
     BARABASI_ALBERT = 2
     RGG = 3
     RGG_FIXED_DEGREE = 4
-    
-class SpaceNet:
-    def __init__(self):
-        self.pos_dict = None
-        self.orientations = None
-    
+
 def initNetwork(netType, numNodes, randomSeed, netParam):
     if (netType == NetworkType.FULLY_CONNECTED):
         return nx.complete_graph(numNodes) #np.repeat(0, self.numNodes)
@@ -48,24 +42,23 @@ def initNetwork(netType, numNodes, randomSeed, netParam):
     elif (netType == NetworkType.RGG or netType == NetworkType.RGG_FIXED_DEGREE):
         connected = False
         while (not connected):
-            spaceGraph = SpaceNet()
-            spaceGraph.pos_dict = {}
-            graph = nx.Graph()
-            #g=nx.random_geometric_graph(self.numNodes, self.commRadius, pos={i: np.random.uniform(size=2) for i in range(self.numNodes) })
-            for i in np.arange(0,numNodes):
-                spaceGraph.pos_dict[i] = np.array( [np.random.uniform(0, 1), np.random.uniform(0, 1)] )  
-                graph.add_node(i)
-                i += 1
-            
-            for agent in np.arange(0,numNodes):
-                for neigh, neighPos in spaceGraph.pos_dict.items():
-                    if (not neigh == agent) and (np.linalg.norm(spaceGraph.pos_dict[agent]-neighPos) <= netParam):
-                        graph.add_edge(agent, neigh)
+            graph=nx.random_geometric_graph(numNodes, netParam, pos={i: np.random.uniform(size=2) for i in range(numNodes) })
+            # pos_dict = {}
+            # graph = nx.Graph()
+            # for i in np.arange(0,numNodes):
+            #     pos_dict[i] = np.array( [np.random.uniform(0, 1), np.random.uniform(0, 1)] )  
+            #     graph.add_node(i)
+            #     i += 1
+            #
+            # for agent in np.arange(0,numNodes):
+            #     for neigh, neighPos in pos_dict.items():
+            #         if (not neigh == agent) and (np.linalg.norm(pos_dict[agent]-neighPos) <= netParam):
+            #             graph.add_edge(agent, neigh)
                 
-                connected = nx.is_connected( graph )
-                if not connected:
-                    if (DEBUG): print("Graph was not connected; Resampling!")
-        nx.set_node_attributes(graph, spaceGraph.pos_dict, "pos")
+            connected = nx.is_connected( graph )
+            if not connected:
+                if (DEBUG): print("Graph was not connected; Resampling!")
+            #nx.set_node_attributes(graph, pos_dict, "pos")
         return graph
             
 if __name__ == '__main__':
@@ -178,7 +171,7 @@ if __name__ == '__main__':
             
             # if (change): print(len([o for o in nx.get_node_attributes(graph, 'opinion').values() if o == 1]))
 
-            if (False and change):                        
+            if (change):                        
                 opinion = nx.get_node_attributes(graph, 'opinion')
                 print(opinion)
                 digestion = nx.get_node_attributes(graph, 'digestion')
