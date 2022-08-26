@@ -15,8 +15,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-DEBUG = True
+DEBUG = False
 DEFAULT_CONFIG_FILENAME="/Users/joefresna/LessIsMoreOpinionDynamics/config/bestOf2.config"
 
 class NetworkType(Enum):
@@ -134,6 +133,7 @@ if __name__ == '__main__':
         print( "networkParameter: " + str(netParam) )
     
     np.random.seed(randomSeed)
+    convergence_times = [maxTime]*numberOfExperiments
     for rep in range(numberOfExperiments):
         ## Creating the network
         graph = initNetwork(netType, numOfNodes, randomSeed+(rep*555), netParam)
@@ -158,20 +158,43 @@ if __name__ == '__main__':
             if np.random.uniform() < discoveryProbability: # independent discovery 
                 if (graph.nodes[node]['opinion']==2): change = True
                 graph.nodes[node]['opinion']=1
-                #print("Disco")
+                # if DEBUG: print("Discovery by node " + str(node))
             else: # social interaction
-                neighs = [n for n in graph.neighbors(node) if (np.random.uniform() < optionQualities[ graph.nodes[n]['opinion']-1 ]) and (graph.nodes[n]['digestion']==0) ]
-                #print(neighs)
-                if len(neighs) > 0:
-                    neigh = np.random.choice(neighs)
-                    if not (graph.nodes[node]['opinion'] == graph.nodes[neigh]['opinion']):
-                        graph.nodes[node]['opinion'] = graph.nodes[neigh]['opinion']
-                        graph.nodes[node]['digestion'] = digestionTime
-                        change = True
+                use_listening_prob = True
+                if use_listening_prob:
+                    ## Selecting a neighbor with probability proportional to their quality (normalised by the number of neighbors)
+                    neighs = [ (n,optionQualities[ graph.nodes[n]['opinion']-1 ]) for n in graph.neighbors(node) if graph.nodes[n]['digestion']==0 ]
+                    # print("Before norm " + str(neighs))
+                    probSum = sum(p for _,p in neighs)
+                    neighs = [ (n,p/probSum) for n,p in neighs ]
+                    # print("After  norm " + str(neighs))
+                    randNum = np.random.uniform()
+                    # print("My opinion is " + str(graph.nodes[node]['opinion']))
+                    bottom = 0
+                    for neigh,prob in neighs:
+                        if randNum < bottom+prob:
+                            if not (graph.nodes[node]['opinion'] == graph.nodes[neigh]['opinion']):
+                                graph.nodes[node]['opinion'] = graph.nodes[neigh]['opinion']
+                                graph.nodes[node]['digestion'] = digestionTime
+                                change = True
+                            # if DEBUG: print("I'm " + str(node) + " Selected neigh " + str(neigh) + " w/ op: " + str(graph.nodes[neigh]['opinion']))
+                            break 
+                        else:
+                            bottom += prob
+                else:
+                    ## Select one random neighbor from the speaking neighbors (i.e. first I determine which neighbors are speaking and then I pick one uniformly random)
+                    neighs = [n for n in graph.neighbors(node) if (np.random.uniform() < optionQualities[ graph.nodes[n]['opinion']-1 ]) and (graph.nodes[n]['digestion']==0) ]
+                    #print(neighs)
+                    if len(neighs) > 0:
+                        neigh = np.random.choice(neighs)
+                        if not (graph.nodes[node]['opinion'] == graph.nodes[neigh]['opinion']):
+                            graph.nodes[node]['opinion'] = graph.nodes[neigh]['opinion']
+                            graph.nodes[node]['digestion'] = digestionTime
+                            change = True
             
             # if (change): print(len([o for o in nx.get_node_attributes(graph, 'opinion').values() if o == 1]))
 
-            if (change):                        
+            if (False and change):                        
                 opinion = nx.get_node_attributes(graph, 'opinion')
                 print(opinion)
                 digestion = nx.get_node_attributes(graph, 'digestion')
@@ -190,21 +213,29 @@ if __name__ == '__main__':
                 plt.show()
 
             if not 2 in nx.get_node_attributes(graph, 'opinion').values():
-                print("Consensus for option 1 reached at timestep " + str(t) )
+                if DEBUG: print("Consensus for option 1 reached at timestep " + str(t) )
+                convergence_times[rep] = t
                 break
             
         
         ## Plotting the graph with colored nodes
-        decisionColors=[]
-        for n in graph.nodes():
-            if (graph.nodes[n]['opinion']==1): decisionColors.append('r') 
-            elif  (graph.nodes[n]['opinion']==2): decisionColors.append('g')
-            else: decisionColors.append('y')
-        if (netType == NetworkType.RGG or netType == NetworkType.RGG_FIXED_DEGREE):
-            pos_layout = nx.get_node_attributes(graph, "pos")
-        else:
-            pos_layout = nx.circular_layout(graph)
-        nx.draw(graph, pos_layout, node_color=decisionColors, with_labels=True)
-        plt.show()   
+        if DEBUG:
+            decisionColors=[]
+            for n in graph.nodes():
+                if (graph.nodes[n]['opinion']==1): decisionColors.append('r') 
+                elif  (graph.nodes[n]['opinion']==2): decisionColors.append('g')
+                else: decisionColors.append('y')
+            if (netType == NetworkType.RGG or netType == NetworkType.RGG_FIXED_DEGREE):
+                pos_layout = nx.get_node_attributes(graph, "pos")
+            else:
+                pos_layout = nx.circular_layout(graph)
+            nx.draw(graph, pos_layout, node_color=decisionColors, with_labels=True)
+            plt.show()
     
-
+    os.makedirs(os.path.dirname(outputTxtFile), exist_ok=True)
+    with open(outputTxtFile, 'w') as outstream:
+        outstream.write('\n'.join(str(item) for item in convergence_times)) # write each item on a new line
+        if DEBUG: print("Written file " + str(outputTxtFile))
+    
+    if DEBUG: 
+        print("Process Terminated")
