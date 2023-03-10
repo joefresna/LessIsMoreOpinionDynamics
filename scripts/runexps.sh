@@ -57,32 +57,36 @@ do
 			    do  
 					for DIGEST_TIME in ${DIGEST_TIME_VALUES[*]};
 					do				
-						JOB_PARAM=LIME_N-${NET_SIZE}_mt-${MAX_TIME}_q-${QUALITY_LOW}_dp-${DISCOVERY_PROBABILITY}_net-${NET_TYPE}_p-${NET_PARAM}_dt-${DIGEST_TIME}
-						
-						CONFIG_FILE=${CONFIG_DIR}/${JOB_PARAM}.config
-						OUT_FILE=${OUT_DIR}/${JOB_PARAM}.txt
-						
-					    sed -e "s|RND_SEED|${RND_SEED}|"         \
-					        -e "s|NUM_REP|${NUM_REP}|"           \
-					        -e "s|MAX_TIME|${MAX_TIME}|"         \
-					        -e "s|DIGEST_TIME|${DIGEST_TIME}|"   \
-					        -e "s|NET_SIZE|${NET_SIZE}|"         \
-					        -e "s|NET_TYPE|${NET_TYPE}|"         \
-					        -e "s|NET_PARAM|${NET_PARAM}|"       \
-					        -e "s|QUALITY_LOW|${QUALITY_LOW}|"       \
-					        -e "s|DISCOVERY_PROBABILITY|${DISCOVERY_PROBABILITY}|"       \
-					        -e "s|OUT_FILE|${OUT_FILE}|"         \
-								${TEMPLATE_CONFIG} > ${CONFIG_FILE}
-			
-						COMMAND="sbatch run_job.sh ${EXEC_FILE} ${CONFIG_FILE}"
-						#COMMAND="python3 ${EXEC_FILE} ${CONFIG_FILE}"
-						#echo ${COMMAND}
-						while ! ${COMMAND}
-						do
-							sleep 3
+						for REWIRING_PROBABILITY in ${REWIRING_PROBABILITY_VALUES[*]};
+						do				
+							JOB_PARAM=LIME_N-${NET_SIZE}_mt-${MAX_TIME}_q-${QUALITY_LOW}_dp-${DISCOVERY_PROBABILITY}_net-${NET_TYPE}_p-${NET_PARAM}_dt-${DIGEST_TIME}
+							
+							CONFIG_FILE=${CONFIG_DIR}/${JOB_PARAM}.config
+							OUT_FILE=${OUT_DIR}/${JOB_PARAM}.txt
+							
+						    sed -e "s|RND_SEED|${RND_SEED}|"         \
+						        -e "s|NUM_REP|${NUM_REP}|"           \
+						        -e "s|MAX_TIME|${MAX_TIME}|"         \
+						        -e "s|DIGEST_TIME|${DIGEST_TIME}|"   \
+						        -e "s|NET_SIZE|${NET_SIZE}|"         \
+						        -e "s|NET_TYPE|${NET_TYPE}|"         \
+						        -e "s|NET_PARAM|${NET_PARAM}|"       \
+						        -e "s|QUALITY_LOW|${QUALITY_LOW}|"       \
+						        -e "s|DISCOVERY_PROBABILITY|${DISCOVERY_PROBABILITY}|"   \
+						        -e "s|REWIRING_PROBABILITY|${REWIRING_PROBABILITY}|"     \
+						        -e "s|OUT_FILE|${OUT_FILE}|"         \
+									${TEMPLATE_CONFIG} > ${CONFIG_FILE}
+				
+							COMMAND="sbatch run_job.sh ${EXEC_FILE} ${CONFIG_FILE}"
+							#COMMAND="python3 ${EXEC_FILE} ${CONFIG_FILE}"
+							#echo ${COMMAND}
+							while ! ${COMMAND}
+							do
+								sleep 10
+							done
+							
+							((COUNT++))
 						done
-						
-						((COUNT++))
 					done 
 				done
 			done
