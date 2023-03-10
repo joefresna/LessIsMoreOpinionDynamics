@@ -117,6 +117,7 @@ if __name__ == '__main__':
                 netParam = math.sqrt( netParam / (math.pi * numOfNodes) )
     else:
         netParam=0
+    rewiringProbability = config.getfloat('network', 'rewiringProbability')
     
     ## Pring out config
     if DEBUG:
@@ -131,6 +132,7 @@ if __name__ == '__main__':
         print( "numOfNodes: " + str(numOfNodes) )
         print( "netType: " + str(netTypeStr) )
         print( "networkParameter: " + str(netParam) )
+        print( "rewiringProbability : " + str(rewiringProbability) )
     
     np.random.seed(randomSeed)
     convergence_times = [maxTime]*numberOfExperiments
@@ -148,6 +150,57 @@ if __name__ == '__main__':
             # Select a random node
             node = np.random.randint(numOfNodes)
             
+            # network re-wiring
+            if np.random.uniform() < rewiringProbability:
+                rewiring_attempts = 0 # temporary counter to avoid deadlocks
+                #print(nx.is_connected( graph ))
+                #print("Node " + str(node) + " had " + str( len(graph.edges(node)) ) + " friends.")
+                while (rewiring_attempts < 1000): # try to rewire the network for a maximum num of times before giving up
+                    # if rewiring_attempts > 10: print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
+                    # select a random edge of the node
+                    edge_id = np.random.randint(len(graph.edges(node)))
+                    edge_first = list(graph.edges(node))[edge_id]
+                    # select another random edge that does not involve node and its neighbours
+                    edge_second = list(graph.edges())[ np.random.randint( graph.number_of_edges() ) ]
+                    # randomly choose to join 1st element with 1st element or 1st element with 2nd element (when combining edge_first and edge_second)
+                    invert_edge_order = np.random.choice([True,False])
+                    if invert_edge_order:
+                        # check if the rewiring would create a loop-edge from/to the same node
+                        if (edge_first[0] == edge_second[0] or edge_first[1] == edge_second[1]):
+                            continue
+                        # create the two new edges by swapping the nodes (and placing them in ascending order)
+                        edge_new_1 = (edge_first[0], edge_second[0]) if edge_first[0] < edge_second[0] else (edge_second[0], edge_first[0]) 
+                        edge_new_2 = (edge_first[1], edge_second[1]) if edge_first[1] < edge_second[1] else (edge_second[1], edge_first[1]) 
+                    else:
+                        # check if the rewiring would create a loop-edge from/to the same node
+                        if (edge_first[0] == edge_second[1] or edge_first[1] == edge_second[0]):
+                            continue
+                        # create the two new edges by swapping the nodes (and placing them in ascending order)
+                        edge_new_1 = (edge_first[0], edge_second[1]) if edge_first[0] < edge_second[1] else (edge_second[1], edge_first[0]) 
+                        edge_new_2 = (edge_first[1], edge_second[0]) if edge_first[1] < edge_second[0] else (edge_second[0], edge_first[1])
+                    # if none of the two new edges already exists in the graph, then they are good, and exit the loop 
+                    if (edge_new_1 not in list(graph.edges())) and (edge_new_2 not in list(graph.edges())):
+                        break
+                if (rewiring_attempts < 1000): # all checks have passed, thus we remove the edges and add the new ones
+                    # remove the edges
+                    graph.remove_edge(edge_first[0], edge_first[1])
+                    graph.remove_edge(edge_second[0], edge_second[1])
+                    #print("Removing edges " + str(edge_first) + " and " + str( edge_second ) + ".")
+                    # add the new edges
+                    graph.add_edge(edge_new_1[0], edge_new_1[1])
+                    graph.add_edge(edge_new_2[0], edge_new_2[1])
+                    #print("Adding edges " + str(edge_new_1) + " and " + str( edge_new_2 ) + ".")
+                else:
+                    print("Failed to rewire node " + str(node) + " which already has " + str( len(graph.edges(node)) ) + " friends.")
+                
+                # select a random node that is not itself
+                new_neigh = node
+                while (new_neigh == node):
+                    new_neigh = np.random.randint(numOfNodes)
+                # add a new edge with the new_neigh
+                graph.add_edge(node, new_neigh)
+                #print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
+            
             # Update the digestion timers
             digestion = nx.get_node_attributes(graph, 'digestion')
             digestion = { n: max(0,d-1) for n,d in digestion.items() }
@@ -162,7 +215,7 @@ if __name__ == '__main__':
             else: # social interaction
                 use_listening_prob = True
                 if use_listening_prob:
-                    ## Selecting a neighbor with probability proportional to their quality (normalised by the number of neighbors)
+                    ## Selecting a neighbor with probability proportional to their quality (normalised by the number of neighbours)
                     neighs = [ (n,optionQualities[ graph.nodes[n]['opinion']-1 ]) for n in graph.neighbors(node) if graph.nodes[n]['digestion']==0 ]
                     # print("Before norm " + str(neighs))
                     probSum = sum(p for _,p in neighs)
