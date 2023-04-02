@@ -156,6 +156,7 @@ if __name__ == '__main__':
                 #print(nx.is_connected( graph ))
                 #print("Node " + str(node) + " had " + str( len(graph.edges(node)) ) + " friends.")
                 while (rewiring_attempts < 1000): # try to rewire the network for a maximum num of times before giving up
+                    rewiring_attempts += 1
                     # if rewiring_attempts > 10: print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
                     # select a random edge of the node
                     edge_id = np.random.randint(len(graph.edges(node)))
