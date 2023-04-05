@@ -139,6 +139,10 @@ if __name__ == '__main__':
     for rep in range(numberOfExperiments):
         ## Creating the network
         graph = initNetwork(netType, numOfNodes, randomSeed+(rep*555), netParam)
+        # avg = 0
+        # for v in dict(graph.degree).values():
+        #     avg += v
+        # print(avg/numOfNodes/numOfNodes)
         ## Initialising the opinions with all nodes starting from opinion 2
         opinions = { n:2 for n in range(numOfNodes) }
         digestion = { n:0 for n in range(numOfNodes) }
@@ -155,12 +159,15 @@ if __name__ == '__main__':
                 rewiring_attempts = 0 # temporary counter to avoid deadlocks
                 #print(nx.is_connected( graph ))
                 #print("Node " + str(node) + " had " + str( len(graph.edges(node)) ) + " friends.")
+                #print(graph.edges(node))
                 while (rewiring_attempts < 1000): # try to rewire the network for a maximum num of times before giving up
                     rewiring_attempts += 1
-                    # if rewiring_attempts > 10: print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
+                    #if rewiring_attempts > 10: print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
                     # select a random edge of the node
                     edge_id = np.random.randint(len(graph.edges(node)))
                     edge_first = list(graph.edges(node))[edge_id]
+                    # if edge_first[0] > edge_first[1]:
+                    #     edge_first = (edge_first[1], edge_first[0])
                     # select another random edge that does not involve node and its neighbours
                     edge_second = list(graph.edges())[ np.random.randint( graph.number_of_edges() ) ]
                     # randomly choose to join 1st element with 1st element or 1st element with 2nd element (when combining edge_first and edge_second)
@@ -194,13 +201,8 @@ if __name__ == '__main__':
                 else:
                     print("Failed to rewire node " + str(node) + " which already has " + str( len(graph.edges(node)) ) + " friends.")
                 
-                # select a random node that is not itself
-                new_neigh = node
-                while (new_neigh == node):
-                    new_neigh = np.random.randint(numOfNodes)
-                # add a new edge with the new_neigh
-                graph.add_edge(node, new_neigh)
                 #print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
+                #print(graph.edges(node))
             
             # Update the digestion timers
             digestion = nx.get_node_attributes(graph, 'digestion')
@@ -285,7 +287,7 @@ if __name__ == '__main__':
                 pos_layout = nx.circular_layout(graph)
             nx.draw(graph, pos_layout, node_color=decisionColors, with_labels=True)
             plt.show()
-    
+        #print("Rep "+str(rep)+" has finished")
     os.makedirs(os.path.dirname(outputTxtFile), exist_ok=True)
     with open(outputTxtFile, 'w') as outstream:
         outstream.write('\n'.join(str(item) for item in convergence_times)) # write each item on a new line
