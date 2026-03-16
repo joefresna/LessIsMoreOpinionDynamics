@@ -2,7 +2,7 @@
 Created on 2 August 2022
 
 @author: Andreagiovanni Reina.
-IRIDIA, Universite' Libre de Bruxelles, Belgium
+CASCB, University of Konstanz, Germany
 '''
 
 import sys
@@ -214,6 +214,8 @@ if __name__ == '__main__':
             if np.random.uniform() < discoveryProbability: # independent discovery 
                 if (graph.nodes[node]['opinion']==2): change = True
                 graph.nodes[node]['opinion']=1
+                # for independent discovery the agent does not have any deliberation time (digestion)
+                graph.nodes[node]['digestion'] = 0
                 # if DEBUG: print("Discovery by node " + str(node))
             else: # social interaction
                 use_listening_prob = True
