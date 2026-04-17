@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 DEBUG = False
+PLOT_EVO = False
 DEFAULT_CONFIG_FILENAME="/Users/joefresna/LessIsMoreOpinionDynamics/config/bestOf2.config"
 
 class NetworkType(Enum):
@@ -119,6 +120,11 @@ if __name__ == '__main__':
         netParam=0
     rewiringProbability = config.getfloat('network', 'rewiringProbability')
     
+    ## Creating the evo subdir, if it doesn't exist yet
+    if PLOT_EVO:
+        evo_folder = os.path.join(os.path.dirname(outputTxtFile), "evo")
+        os.makedirs(evo_folder, exist_ok=True)
+    
     ## Pring out config
     if DEBUG:
         print( "randomSeed: " + str(randomSeed) )
@@ -144,13 +150,23 @@ if __name__ == '__main__':
         #     avg += v
         # print(avg/numOfNodes/numOfNodes)
         ## Initialising the opinions with all nodes starting from opinion 2
-        opinions = { n:2 for n in range(numOfNodes) }
+        opinions  = { n:2 for n in range(numOfNodes) }
         digestion = { n:0 for n in range(numOfNodes) }
         #print(opinions)
         nx.set_node_attributes(graph, opinions, "opinion")
         nx.set_node_attributes(graph, digestion, "digestion")
 
+        # Prepare filename and open time_evo_file
+        if PLOT_EVO:
+            resfolder, time_evo_filename = os.path.split(outputTxtFile)
+            base, ext = os.path.splitext(time_evo_filename)
+            time_evo_filename = os.path.join(resfolder, "evo/evo-" + base + "_" + str(rep) + ext)
+            time_evo_file = open(time_evo_filename, "w")
+            
         for t in np.arange(1,maxTime+1):
+            if PLOT_EVO:  # Saving the population A size to time_evo_file
+                popAsize = num_ones = sum(v == 1 for v in nx.get_node_attributes(graph, 'opinion').values()) 
+                time_evo_file.write(str(t) + "\t" + str(popAsize) + "\n")
             # Select a random node
             node = np.random.randint(numOfNodes)
             
@@ -274,7 +290,12 @@ if __name__ == '__main__':
                 if DEBUG: print("Consensus for option 1 reached at timestep " + str(t) )
                 convergence_times[rep] = t
                 break
-            
+        
+        ## Closing the time_evo_file 
+        if PLOT_EVO: 
+            popAsize = num_ones = sum(v == 1 for v in nx.get_node_attributes(graph, 'opinion').values()) 
+            time_evo_file.write(str(t) + "\t" + str(popAsize) + "\n") 
+            time_evo_file.close()    
         
         ## Plotting the graph with colored nodes
         if DEBUG:

@@ -12,11 +12,12 @@
 # Path variables    
 PROJECT_DIR_NAME=${HOME}/LessIsMoreOpinionDynamics
 EXEC_FILE=${PROJECT_DIR_NAME}/BestOfNOnRewiringNets/bestOf2OnGraphs.py
-OUT_DIR=${PROJECT_DIR_NAME}/results/setRW2
+OUT_DIR=${PROJECT_DIR_NAME}/results/setRW5
 TEMPLATE_CONFIG=${PROJECT_DIR_NAME}/config/bestOf2.template.config
 CONFIG_DIR=${PROJECT_DIR_NAME}/batch_config
 
 mkdir -p ${OUT_DIR}
+mkdir -p ${OUT_DIR}/evo
 mkdir -p ${CONFIG_DIR}
 
 
@@ -27,22 +28,23 @@ MAX_TIME=10000
 #QUALITY_LOW=0.8
 #DISCOVERY_PROBABILITY=0.02
 QUALITY_LOW_VALUES=( 0.7 0.8 0.9 )
-#QUALITY_LOW_VALUES=( 0.9 )
+#QUALITY_LOW_VALUES=( 0.8 )
 DISCOVERY_PROBABILITY_VALUES=( 0.01 0.02 )
-#DISCOVERY_PROBABILITY_VALUES=( 0.02 )
+#DISCOVERY_PROBABILITY_VALUES=( 0.01 )
 #DIGEST_TIME_VALUES=$(seq 0 10 50 )
-DIGEST_TIME_VALUES=$(seq 0 25 100 )
+DIGEST_TIME_VALUES=$(seq 0 5 100 )
 #NET_SIZE=100
 NET_SIZE_VALUES=(50 100)
 # possible netTypes are [ 'full' , 'erdos-renyi', 'barabasi-albert', 'rgg', 'rgg-fixed-degree' ]
 #NET_TYPE_VALUES=('erdos-renyi' 'barabasi-albert' 'rgg-fixed-degree')
 NET_TYPE_VALUES=('erdos-renyi')
 #NET_PARAM_VALUES=$(seq 0.05 0.05 0.6 )
-NET_PARAM_VALUES=$(seq 0.005 0.01 0.05 )
-#NET_PARAM_VALUES=(0.05 0.10 0.15 0.20 0.30 0.40)
+#NET_PARAM_VALUES=$(seq 0.005 0.01 0.05 )
+NET_PARAM_VALUES=( 0.035 )
 #NET_PARAM_VALUES=$(seq 3 2 11)
 #NET_PARAM_VALUES=( 1 )
 REWIRING_PROBABILITY_VALUES=$(seq 0.0 0.05 1.0 )
+#REWIRING_PROBABILITY_VALUES=$(seq 0.0 0.1 1.0 )
 
 COUNT=1
 

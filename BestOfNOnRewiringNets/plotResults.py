@@ -13,9 +13,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 import os
 
-ResultPath = "../results/setRW2/"
+ResultPath = "../results/setEvo2/"
 #Output_dir="../selected_plots"
-Output_dir="../matrix_plots"
+Output_dir="../setEvo2_plots"
 #Output_dir="plots-q07-100"
 NetSizes = [100]
 NetType = "erdos-renyi"
@@ -35,18 +35,19 @@ qLowParams=[0.8]#, 0.8, 0.9]
 discoProbParams=[0.01, 0.02]
 #discoProbParams=[0.01, 0.02, 0.05]
 RewireProbs = np.arange(0.0,1+0.01,0.05)
-RewireProbs = [round(np,2) for np in RewireProbs]
+RewireProbs = [round(x,2) for x in RewireProbs]
 
 #NICE FIG RW
 NetSizes = [50,100]
 NetParams = np.arange(0.025,0.05+0.001,0.01)
 NetParams = [0.035]
 DigestTimes = np.arange(0,101,25)
+DigestTimes = np.arange(0,51,25)
 TMax = 10000
 qLowParams=[0.8]
 discoProbParams=[0.02]
-RewireProbs = np.arange(0.0,1+0.01,0.05)
-RewireProbs = [round(np,2) for np in RewireProbs]
+RewireProbs = np.arange(0.0,1+0.01,0.1)
+RewireProbs = [round(x,2) for x in RewireProbs]
 
 #NetParams = [0.7]
 #qLowParams=[0.9]
@@ -61,7 +62,7 @@ def parseData():
                     for netParam in NetParams:
                         for rewireProb in RewireProbs:
                             #filename = ResultPath + "LIME_N-" + str(netSize) + "_mt-" + str(TMax) + "_q-" + str(qLow) +  "_dp-" + str(discoProb) + "_net-" + NetType + "_p-" + (format(netParam, '.2f')if(NetType=="erdos-renyi")else str(netParam)) + "_dt-" + str(digestTime) + ".txt"
-                            filename = ResultPath + "LIME_N-" + str(netSize) + "_mt-" + str(TMax) + "_q-" + str(qLow) +  "_dp-" + str(discoProb) + "_net-" + NetType + "_p-" + (format(netParam, '.3f')if(NetType=="erdos-renyi")else str(netParam)) + "_dt-" + str(digestTime) + "_rwp-" + str(format(rewireProb, '.2f')) + ".txt"  
+                            filename = ResultPath + "LIME_N-" + str(netSize) + "_mt-" + str(TMax) + "_q-" + str(qLow) +  "_dp-" + str(discoProb) + "_net-" + NetType + "_p-" + (format(netParam, '.2f')if(NetType=="erdos-renyi")else str(netParam)) + "_dt-" + str(digestTime) + "_rwp-" + format(rewireProb, 'g') + ".txt"  
                             #(str(format(rewireProb, '.2f'))if(rewireProb>0)else "0.0") + ".txt"
                             print(filename)
                             with open(filename) as f:
@@ -354,14 +355,35 @@ def plotMatrixRW(df, netSize, discoProb, qLow, netParam):
 
     plt.close(fig)
     
+def plotTimeEvo(): #netSize, discoProb, qLow, netParam):
+    #filename = ResultPath + "LIME_N-" + str(netSize) + "_mt-" + str(TMax) + "_q-" + str(qLow) +  "_dp-" + str(discoProb) + "_net-" + NetType + "_p-" + (format(netParam, '.2f')if(NetType=="erdos-renyi")else str(netParam)) + "_dt-" + str(digestTime) + "_rwp-" + str(format(rewireProb, '.1f')) + ".txt"
+    filename = "../data/evo_out.txt"  
+    print(filename)
+    times = []
+    popA = []
+    with open(filename, "r") as f:
+        for line in f:
+            parts = line.split()
+            times.append(int(parts[0]))
+            popA.append(int(parts[1]))
+    plt.plot(times, popA)
+    plt.xlabel("Time")
+    plt.ylabel("Population A")
+    plt.title("...")
+    plt.show()
+    
+    
 if __name__ == '__main__':
     if not os.path.isdir(ResultPath + Output_dir + "/"):
         os.makedirs(ResultPath + Output_dir + "/")
         print(ResultPath + Output_dir + "/")
     
-    qs=[0.7,0.8,0.9]
-    dps=[0.01,0.02]
+    #plotTimeEvo()
+    
+    qs=[0.8]
+    dps=[0.001]
     NetSizes=[100]
+    NetParams = [0.08]
     for qi in qs:
         for dp in dps:
             qLowParams=[qi]
