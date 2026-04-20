@@ -43,10 +43,10 @@ PYTHON="${VENV_DST}/bin/python"
 "${PYTHON}" -c "import networkx; print('networkx ok', networkx.__version__)"
 
 # Path variables    
-PROJECT_DIR_NAME=${HOME}/Reina/LessIsMoreOpinionDynamics
+PROJECT_DIR_NAME=${HOME}/LessIsMoreOpinionDynamics
 EXEC_FILE=${PROJECT_DIR_NAME}/BestOfNOnRewiringNets/bestOf2OnGraphs.py
 TEMPLATE_CONFIG=${PROJECT_DIR_NAME}/config/bestOf2.template.config
-RESULTS_SET="setRW2"
+RESULTS_SET="setRW3"
 
 # Stage code + template to TMPDIR to avoid repeated HOME reads
 EXEC_LOCAL="${RUN_ROOT}/bestOf2OnGraphs.py"

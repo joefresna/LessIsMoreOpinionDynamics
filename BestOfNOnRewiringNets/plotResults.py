@@ -2,7 +2,7 @@
 Created on 16 Dec 2022
 
 @author: Andreagiovanni Reina.
-IRIDIA, Universite' Libre de Bruxelles, Belgium
+CASCB, University of Konstanz, Germany
 '''
 
 import numpy as np
