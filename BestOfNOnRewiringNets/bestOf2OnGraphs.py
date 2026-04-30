@@ -88,7 +88,7 @@ if __name__ == '__main__':
     maxTime = config.getint('experiment', 'maxTime')
     optionQualities = json.loads( config['experiment']['optionQualities'] )
     discoveryProbability = config.getfloat('experiment', 'discoveryProbability')
-    digestionTime = config.getint('experiment', 'digestionTime')
+    deliberationTime = config.getint('experiment', 'deliberationTime')
      
     ## -- Network params
     numOfNodes = config.getint('network', 'numberOfNodes')
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         print( "maxTime: " + str(maxTime) )
         print( "optionQualities: " + str(optionQualities) )
         print( "discoveryProbability : " + str(discoveryProbability) )
-        print( "digestionTime : " + str(digestionTime) )
+        print( "deliberationTime : " + str(deliberationTime) )
         print( "numOfNodes: " + str(numOfNodes) )
         print( "netType: " + str(netTypeStr) )
         print( "networkParameter: " + str(netParam) )
@@ -151,10 +151,10 @@ if __name__ == '__main__':
         # print(avg/numOfNodes/numOfNodes)
         ## Initialising the opinions with all nodes starting from opinion 2
         opinions  = { n:2 for n in range(numOfNodes) }
-        digestion = { n:0 for n in range(numOfNodes) }
+        deliberation = { n:0 for n in range(numOfNodes) }
         #print(opinions)
         nx.set_node_attributes(graph, opinions, "opinion")
-        nx.set_node_attributes(graph, digestion, "digestion")
+        nx.set_node_attributes(graph, deliberation, "deliberation")
 
         # Prepare filename and open time_evo_file
         if PLOT_EVO:
@@ -220,24 +220,24 @@ if __name__ == '__main__':
                 #print("Node " + str(node) + " has " + str( len(graph.edges(node)) ) + " friends.")
                 #print(graph.edges(node))
             
-            # Update the digestion timers
-            digestion = nx.get_node_attributes(graph, 'digestion')
-            digestion = { n: max(0,d-1) for n,d in digestion.items() }
-            nx.set_node_attributes(graph, digestion, "digestion")
+            # Update the deliberation timers
+            deliberation = nx.get_node_attributes(graph, 'deliberation')
+            deliberation = { n: max(0,d-1) for n,d in deliberation.items() }
+            nx.set_node_attributes(graph, deliberation, "deliberation")
             
             change = False
             # Decide whether have independent discovery or social interaction
             if np.random.uniform() < discoveryProbability: # independent discovery 
                 if (graph.nodes[node]['opinion']==2): change = True
                 graph.nodes[node]['opinion']=1
-                # for independent discovery the agent does not have any deliberation time (digestion)
-                graph.nodes[node]['digestion'] = 0
+                # for independent discovery the agent does not have any deliberation time 
+                graph.nodes[node]['deliberation'] = 0
                 # if DEBUG: print("Discovery by node " + str(node))
             else: # social interaction
                 use_listening_prob = True
                 if use_listening_prob:
                     ## Selecting a neighbor with probability proportional to their quality (normalised by the number of neighbours)
-                    neighs = [ (n,optionQualities[ graph.nodes[n]['opinion']-1 ]) for n in graph.neighbors(node) if graph.nodes[n]['digestion']==0 ]
+                    neighs = [ (n,optionQualities[ graph.nodes[n]['opinion']-1 ]) for n in graph.neighbors(node) if graph.nodes[n]['deliberation']==0 ]
                     # print("Before norm " + str(neighs))
                     probSum = sum(p for _,p in neighs)
                     neighs = [ (n,p/probSum) for n,p in neighs ]
@@ -249,7 +249,7 @@ if __name__ == '__main__':
                         if randNum < bottom+prob:
                             if not (graph.nodes[node]['opinion'] == graph.nodes[neigh]['opinion']):
                                 graph.nodes[node]['opinion'] = graph.nodes[neigh]['opinion']
-                                graph.nodes[node]['digestion'] = digestionTime
+                                graph.nodes[node]['deliberation'] = deliberationTime
                                 change = True
                             # if DEBUG: print("I'm " + str(node) + " Selected neigh " + str(neigh) + " w/ op: " + str(graph.nodes[neigh]['opinion']))
                             break 
@@ -257,13 +257,13 @@ if __name__ == '__main__':
                             bottom += prob
                 else:
                     ## Select one random neighbor from the speaking neighbors (i.e. first I determine which neighbors are speaking and then I pick one uniformly random)
-                    neighs = [n for n in graph.neighbors(node) if (np.random.uniform() < optionQualities[ graph.nodes[n]['opinion']-1 ]) and (graph.nodes[n]['digestion']==0) ]
+                    neighs = [n for n in graph.neighbors(node) if (np.random.uniform() < optionQualities[ graph.nodes[n]['opinion']-1 ]) and (graph.nodes[n]['deliberation']==0) ]
                     #print(neighs)
                     if len(neighs) > 0:
                         neigh = np.random.choice(neighs)
                         if not (graph.nodes[node]['opinion'] == graph.nodes[neigh]['opinion']):
                             graph.nodes[node]['opinion'] = graph.nodes[neigh]['opinion']
-                            graph.nodes[node]['digestion'] = digestionTime
+                            graph.nodes[node]['deliberation'] = deliberationTime
                             change = True
             
             # if (change): print(len([o for o in nx.get_node_attributes(graph, 'opinion').values() if o == 1]))
@@ -271,8 +271,8 @@ if __name__ == '__main__':
             if (False and change):                        
                 opinion = nx.get_node_attributes(graph, 'opinion')
                 print(opinion)
-                digestion = nx.get_node_attributes(graph, 'digestion')
-                print(digestion)
+                deliberation = nx.get_node_attributes(graph, 'deliberation')
+                print(deliberation)
                 ## Plotting the graph with colored nodes
                 decisionColors=[]
                 for n in graph.nodes():

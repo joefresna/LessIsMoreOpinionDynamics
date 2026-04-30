@@ -84,7 +84,7 @@ def generateAllPlots():
                             plt.violinplot( df.loc[ (df['N'] == netSize) & (df['dt'] == dt) & (df['p'] == netParam) & (df['dp'] == discoProb) & (df['q'] == qLow)  & (df['rw'] == rewireProb) ]['t'], positions=[dt], widths=[5] )
                             succ[i] = 1 - df.loc[ (df['N'] == netSize) & (df['dt'] == dt) & (df['p'] == netParam) & (df['dp'] == discoProb) & (df['q'] == qLow) & (df['rw'] == rewireProb) & (df['t'] == TMax) ]['t'].count() / df.loc[ (df['N'] == netSize) & (df['dt'] == dt) & (df['p'] == netParam) & (df['dp'] == discoProb) & (df['q'] == qLow) & (df['rw'] == rewireProb) ]['t'].count()
                             
-                        plt.xlabel("digestion time")
+                        plt.xlabel("deliberation time")
                         plt.ylabel("adaptation time")
                         plt.savefig(ResultPath + Output_dir + "/LIME_T-vs-DT_N-" + str(netSize) + "_mt-" + str(TMax) + "_q-" + str(qLow) +  "_dp-" + str(discoProb) + "_net-" + NetType + "_p-" + (format(netParam, '.3f')if(NetType=="erdos-renyi")else str(netParam)) + "_rw-" + str(rewireProb) + ".pdf")  
                         plt.clf()
@@ -92,7 +92,7 @@ def generateAllPlots():
                         
                         plt.plot(DigestTimes,succ)
                         plt.ylim(-0.1,1.1)
-                        plt.xlabel("digestion time")
+                        plt.xlabel("deliberation time")
                         plt.ylabel("adaptation probability")
                         plt.savefig(ResultPath + Output_dir + "/LIME_S-vs-DT_N-" + str(netSize) + "_mt-" + str(TMax) + "_q-" + str(qLow) +  "_dp-" + str(discoProb) + "_net-" + NetType + "_p-" + (format(netParam, '.3f')if(NetType=="erdos-renyi")else str(netParam)) + "_rw-" + str(rewireProb) + ".pdf")
                         plt.clf()
@@ -258,7 +258,7 @@ def plotMatrixRW2(df, netSize, discoProb, qLow, netParam):
     )
 
     ax.set_xlabel("rewiring probability")
-    ax.set_ylabel("digestion time")
+    ax.set_ylabel("deliberation time")
     ax.set_title("N={}, q={}, dp={}, p={}, t < {}".format(
         netSize, qLow, discoProb, netParam, TMax
     ))
@@ -328,7 +328,7 @@ def plotMatrixRW(df, netSize, discoProb, qLow, netParam):
     )
 
     ax.set_xlabel("rewiring probability")
-    ax.set_ylabel("digestion time")
+    ax.set_ylabel("deliberation time")
     ax.set_title("N={}, q={}, dp={}, p={}, t < {}".format(
         netSize, qLow, discoProb, netParam, TMax
     ))
