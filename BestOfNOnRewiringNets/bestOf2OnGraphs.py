@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 DEBUG = False
-PLOT_EVO = False
+PLOT_EVO = True
 DEFAULT_CONFIG_FILENAME="/Users/joefresna/LessIsMoreOpinionDynamics/config/bestOf2.config"
 
 class NetworkType(Enum):
@@ -60,6 +60,26 @@ def initNetwork(netType, numNodes, randomSeed, netParam):
                 if (DEBUG): print("Graph was not connected; Resampling!")
             #nx.set_node_attributes(graph, pos_dict, "pos")
         return graph
+
+def countStates(graph):
+    committedA = 0
+    deliberatingA = 0
+    committedB = 0
+    deliberatingB = 0
+    for _, data in graph.nodes(data=True):
+        op = data['opinion']
+        d = data['deliberation']
+        if op == 1:
+            if d == 0:
+                committedA += 1
+            else:
+                deliberatingA += 1
+        elif op == 2:
+            if d == 0:
+                committedB += 1
+            else:
+                deliberatingB += 1
+    return committedA, deliberatingA, committedB, deliberatingB
             
 if __name__ == '__main__':
     if DEBUG: 
@@ -165,8 +185,10 @@ if __name__ == '__main__':
             
         for t in np.arange(1,maxTime+1):
             if PLOT_EVO:  # Saving the population A size to time_evo_file
-                popAsize = num_ones = sum(v == 1 for v in nx.get_node_attributes(graph, 'opinion').values()) 
-                time_evo_file.write(str(t) + "\t" + str(popAsize) + "\n")
+                committedA, deliberatingA, committedB, deliberatingB = countStates(graph)
+                time_evo_file.write( str(t) + "\t" + str(committedA) + "\t" + str(deliberatingA) + "\t" + str(committedB) + "\t" + str(deliberatingB) + "\n" )
+                #popAsize = num_ones = sum(v == 1 for v in nx.get_node_attributes(graph, 'opinion').values()) 
+                #time_evo_file.write(str(t) + "\t" + str(popAsize) + "\n")
             # Select a random node
             node = np.random.randint(numOfNodes)
             
@@ -292,9 +314,11 @@ if __name__ == '__main__':
                 break
         
         ## Closing the time_evo_file 
-        if PLOT_EVO: 
-            popAsize = num_ones = sum(v == 1 for v in nx.get_node_attributes(graph, 'opinion').values()) 
-            time_evo_file.write(str(t) + "\t" + str(popAsize) + "\n") 
+        if PLOT_EVO:
+            committedA, deliberatingA, committedB, deliberatingB = countStates(graph)
+            time_evo_file.write( str(t) + "\t" + str(committedA) + "\t" + str(deliberatingA) + "\t" + str(committedB) + "\t" + str(deliberatingB) + "\n" ) 
+            #popAsize = num_ones = sum(v == 1 for v in nx.get_node_attributes(graph, 'opinion').values()) 
+            #time_evo_file.write(str(t) + "\t" + str(popAsize) + "\n") 
             time_evo_file.close()    
         
         ## Plotting the graph with colored nodes
