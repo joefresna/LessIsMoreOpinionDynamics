@@ -124,6 +124,52 @@ The manuscript explores parameter sweeps over:
 
 The shell scripts in `scripts/` provide examples for launching multiple simulation runs. Depending on the size of the parameter sweep, reproducing the full dataset may require substantial computation time.
 
+
+## Reproducing the figures
+
+### Mean-field model (Eq. 2)
+
+`BestOfNOnRewiringNets/meanfield_model.py` implements the mean-field equations and the numerical tools used in the paper:
+- the asymptotic state reached from an all-B population;
+- the critical deliberation time δ_c, located by bisection;
+- the fixed points and their stability;
+- the fold (saddle-node) of the trapped state.
+
+Time is measured in units of one update per agent, i.e. one mean-field time unit corresponds to N timesteps of the agent-based model. The scripts below are run from `BestOfNOnRewiringNets/`.
+
+| Script | Output |
+|---|---|
+| `python plot_meanfield.py all --out-dir figures` | Fig. 1 (state diagram) and Fig. 4 (mean-field dynamics) |
+| `python meanfield_threshold.py all --out-dir figures` | Supplementary Fig. SF6, plus a printed table: the critical values E_c of Supplementary Table STab1, the limit E_c → q_A/q_B − 1 for rare discovery, and the linear-stability check |
+
+Together these take about one minute.
+
+### Agent-based simulations
+
+`scripts/runexps_paper.sh` runs all simulations on a Slurm cluster, using one node with 96 cores:
+
+```bash
+sbatch scripts/runexps_paper.sh main                       # (rho, delta) sweep: Figs. 3, 5, SF1, SF2, SF3, STab1
+sbatch --time=24:00:00 scripts/runexps_paper.sh extended   # extended horizon: SF5, STab2
+```
+
+Each job writes an archive that contains `aggregated_<set>.csv`, with one row per parameter combination. `analysis/aggregate_results.py` produces the same CSV from any folder of result files. Trajectory files, written with `PLOT_EVO = True`, are averaged over runs with `analysis/aggregate_evo.py`.
+
+The scripts below are run from `analysis/`:
+
+| Figure | Command |
+|---|---|
+| Fig. 2 | `python plot_lessismore.py aggregated_setStatic1.csv --N 50 --q 0.7 --pd 0.01` |
+| Fig. 3 | `python plot_speedup.py aggregated_setRev-main.csv --pd 0.02 --pk 0.035` |
+| Fig. 5 | `python plot_heatmaps.py aggregated_setRev-main.csv --pd 0.02 --pk 0.035` |
+| SF1 | `python plot_heatmaps.py aggregated_setRev-main.csv --pd 0.02 --pk 0.045` |
+| SF2 | `python plot_speedup.py aggregated_setRev-main.csv --pd 0.02 --pk 0.045` |
+| SF3 | `python plot_heatmaps.py aggregated_setRev-main.csv --pd 0.01 --pk 0.035` |
+| SF4 | `python plot_trajectories.py <folder of aggregate_evo.py outputs> --N 50` |
+| SF5 and STab2 | `python plot_extended.py aggregated_setRev-extended.csv` |
+
+`plot_heatmaps.py` also prints the deliberation time at which the adaptation probability crosses 0.5 at ρ = 1; these are the simulation values in STab1.
+
 ---
 
 ## Model summary
